@@ -1,0 +1,191 @@
+[
+  {
+    "id": "prd_mew_006_en_nm",
+    "name": "Charizard ex",
+    "type": "CARD",
+    "priceCents": 2499,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/6.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "006/165", "rarity": "Double Rare", "supertype": "POKEMON", "types": ["Fire"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_006_en_lp",
+    "name": "Charizard ex",
+    "type": "CARD",
+    "priceCents": 1899,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/6.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "006/165", "rarity": "Double Rare", "supertype": "POKEMON", "types": ["Fire"], "condition": "LIGHTLY_PLAYED" }
+  },
+  {
+    "id": "prd_mew_003_en_nm",
+    "name": "Venusaur ex",
+    "type": "CARD",
+    "priceCents": 699,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/3.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "003/165", "rarity": "Double Rare", "supertype": "POKEMON", "types": ["Grass"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_009_en_nm",
+    "name": "Blastoise ex",
+    "type": "CARD",
+    "priceCents": 899,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/9.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "009/165", "rarity": "Double Rare", "supertype": "POKEMON", "types": ["Water"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_007_en_nm",
+    "name": "Squirtle",
+    "type": "CARD",
+    "priceCents": 49,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/7.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "007/165", "rarity": "Common", "supertype": "POKEMON", "types": ["Water"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_008_en_nm",
+    "name": "Wartortle",
+    "type": "CARD",
+    "priceCents": 59,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/8.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "008/165", "rarity": "Uncommon", "supertype": "POKEMON", "types": ["Water"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_004_en_nm",
+    "name": "Charmander",
+    "type": "CARD",
+    "priceCents": 59,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/4.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "004/165", "rarity": "Common", "supertype": "POKEMON", "types": ["Fire"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_025_en_nm",
+    "name": "Pikachu",
+    "type": "CARD",
+    "priceCents": 99,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/25.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "025/165", "rarity": "Common", "supertype": "POKEMON", "types": ["Lightning"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_151_en_nm",
+    "name": "Mew ex",
+    "type": "CARD",
+    "priceCents": 799,
+    "imageUrl": "https://images.pokemontcg.io/sv3pt5/151.png",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en",
+    "card": { "number": "151/165", "rarity": "Double Rare", "supertype": "POKEMON", "types": ["Psychic"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_obf_125_en_psa10",
+    "name": "Charizard ex",
+    "type": "CARD",
+    "priceCents": 9999,
+    "imageUrl": "https://images.pokemontcg.io/sv3/125.png",
+    "setCode": "OBF",
+    "setName": "Obsidian Flames",
+    "language": "en",
+    "card": {
+      "number": "125/197",
+      "rarity": "Double Rare",
+      "supertype": "POKEMON",
+      "types": ["Darkness"],
+      "condition": "NEAR_MINT",
+      "grading": { "company": "PSA", "grade": "10" }
+    }
+  },
+  {
+    "id": "prd_svi_191_en_nm",
+    "name": "Rare Candy",
+    "type": "CARD",
+    "priceCents": 39,
+    "imageUrl": "https://images.pokemontcg.io/sv1/191.png",
+    "setCode": "SVI",
+    "setName": "Scarlet & Violet",
+    "language": "en",
+    "card": { "number": "191/198", "rarity": "Uncommon", "supertype": "TRAINER", "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_svi_196_en_nm",
+    "name": "Ultra Ball",
+    "type": "CARD",
+    "priceCents": 29,
+    "imageUrl": "https://images.pokemontcg.io/sv1/196.png",
+    "setCode": "SVI",
+    "setName": "Scarlet & Violet",
+    "language": "en",
+    "card": { "number": "196/198", "rarity": "Uncommon", "supertype": "TRAINER", "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_sve_003_en_nm",
+    "name": "Basic Water Energy",
+    "type": "CARD",
+    "priceCents": 10,
+    "setCode": "SVE",
+    "setName": "Scarlet & Violet Energies",
+    "language": "en",
+    "card": { "number": "003", "rarity": "Common", "supertype": "ENERGY", "types": ["Water"], "condition": "NEAR_MINT" }
+  },
+  {
+    "id": "prd_mew_etb_en",
+    "name": "Scarlet & Violet—151 Elite Trainer Box",
+    "type": "ELITE_TRAINER_BOX",
+    "priceCents": 7999,
+    "description": "9 booster packs, sleeves, energy cards and accessories.",
+    "setCode": "MEW",
+    "setName": "Scarlet & Violet—151",
+    "language": "en"
+  },
+  {
+    "id": "prd_obf_box_en",
+    "name": "Obsidian Flames Booster Box",
+    "type": "BOOSTER_BOX",
+    "priceCents": 14999,
+    "description": "36 booster packs.",
+    "setCode": "OBF",
+    "setName": "Obsidian Flames",
+    "language": "en"
+  },
+  {
+    "id": "prd_obf_pack_en",
+    "name": "Obsidian Flames Booster Pack",
+    "type": "BOOSTER_PACK",
+    "priceCents": 449,
+    "description": "10 cards per pack.",
+    "setCode": "OBF",
+    "setName": "Obsidian Flames",
+    "language": "en"
+  },
+  {
+    "id": "prd_sv2a_box_ja",
+    "name": "Pokémon Card 151 Booster Box",
+    "type": "BOOSTER_BOX",
+    "priceCents": 12999,
+    "description": "Japanese release. 20 packs of 7 cards.",
+    "setCode": "SV2a",
+    "setName": "Pokémon Card 151",
+    "language": "ja"
+  }
+]
