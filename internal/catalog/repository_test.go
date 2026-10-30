@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/gen/catalogpb"
+	"github.com/TCGStore/TCGCatalogService/gen/catalogpb"
 )
 
 func TestBuildSearchFilter(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/gen/catalogpb"
+	"github.com/TCGStore/TCGCatalogService/gen/catalogpb"
 )
 
 var errNotFound = errors.New("product not found")

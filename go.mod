@@ -1,4 +1,4 @@
-module github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service
+module github.com/TCGStore/TCGCatalogService
 
 go 1.27.3
 

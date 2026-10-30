@@ -3,7 +3,7 @@ package catalog
 import (
 	"strings"
 
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/gen/catalogpb"
+	"github.com/TCGStore/TCGCatalogService/gen/catalogpb"
 )
 
 const (

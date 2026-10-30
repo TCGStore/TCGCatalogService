@@ -13,9 +13,9 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/gen/catalogpb"
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/internal/catalog"
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/internal/config"
+	"github.com/TCGStore/TCGCatalogService/gen/catalogpb"
+	"github.com/TCGStore/TCGCatalogService/internal/catalog"
+	"github.com/TCGStore/TCGCatalogService/internal/config"
 )
 
 func main() {

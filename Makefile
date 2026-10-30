@@ -6,10 +6,10 @@ export MONGO_URI
 
 # Regenerate gen/catalogpb after changing proto/catalog.proto.
 proto:
-	protoc -I ../../proto \
+	protoc -I proto \
 		--go_out=gen/catalogpb --go_opt=paths=source_relative \
 		--go-grpc_out=gen/catalogpb --go-grpc_opt=paths=source_relative \
-		../../proto/catalog.proto
+		proto/catalog.proto
 
 run:
 	go run ./cmd/server

@@ -941,8 +941,8 @@ const file_catalog_proto_rawDesc = "" +
 	"\n" +
 	"GetProduct\x12#.tcgstore.catalog.GetProductRequest\x1a\x19.tcgstore.catalog.Product\x12Z\n" +
 	"\vGetProducts\x12$.tcgstore.catalog.GetProductsRequest\x1a%.tcgstore.catalog.GetProductsResponse\x12c\n" +
-	"\x0eSearchProducts\x12'.tcgstore.catalog.SearchProductsRequest\x1a(.tcgstore.catalog.SearchProductsResponseB~\n" +
-	"\x19com.tcgstore.catalog.grpcP\x01Z_github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/gen/catalogpb;catalogpbb\x06proto3"
+	"\x0eSearchProducts\x12'.tcgstore.catalog.SearchProductsRequest\x1a(.tcgstore.catalog.SearchProductsResponseB\\\n" +
+	"\x19com.tcgstore.catalog.grpcP\x01Z=github.com/TCGStore/TCGCatalogService/gen/catalogpb;catalogpbb\x06proto3"
 
 var (
 	file_catalog_proto_rawDescOnce sync.Once

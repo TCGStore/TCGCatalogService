@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/internal/catalog"
-	"github.com/Javiercatalanv/ArquitecturaSistemas/services/catalog-service/internal/config"
+	"github.com/TCGStore/TCGCatalogService/internal/catalog"
+	"github.com/TCGStore/TCGCatalogService/internal/config"
 )
 
 // Product ids here are shared with inventory-service's seed; keep them in sync.

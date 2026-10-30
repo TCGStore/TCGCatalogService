@@ -20,16 +20,16 @@ Si cambia `proto/catalog.proto`, se regenera con `make proto` y se sube junto al
 Requisitos: Go, `protoc`, `protoc-gen-go`, `protoc-gen-go-grpc` y Docker.
 
 ```bash
-# desde la raíz del repo
+# desde TCGBackend
 docker compose up -d mongodb
 
-# desde services/catalog-service
+# desde este repo
 make seed    # carga los 17 productos de prueba (se puede repetir sin duplicar)
 make run     # levanta el servidor en :50051
 make test
 ```
 
-O todo con Docker, desde la raíz:
+O todo con Docker, desde TCGBackend:
 
 ```bash
 docker compose up -d --build catalog-service
@@ -64,3 +64,9 @@ grpcurl -plaintext -d '{"type":"PRODUCT_TYPE_CARD","energy_type":"Fire","languag
   TypeScript con `@grpc/proto-loader` conviene usar `longs: Number`.
 - Los ids de producto (`prd_mew_006_en_nm`) son los mismos que usará inventory-service.
 - Los datos de prueba son de demo: los precios son inventados.
+
+## Contratos
+
+Los archivos de `proto/` son una **copia** de los de `TCGBackend/proto`, que es la fuente
+de verdad. No se editan aquí: el cambio se acuerda con el equipo, se hace en `TCGBackend` y
+se copia con `./scripts/sync-proto.sh` (desde TCGBackend).
