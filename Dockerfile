@@ -4,7 +4,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server ./cmd/server \
- && CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/seed ./cmd/seed
+ && CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/seed ./cmd/seed \
+ && CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/import ./cmd/import
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/ /app/
