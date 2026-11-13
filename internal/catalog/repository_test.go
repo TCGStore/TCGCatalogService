@@ -17,9 +17,23 @@ func TestBuildSearchFilter(t *testing.T) {
 		want bson.M
 	}{
 		{
-			name: "no filters",
+			name: "customers only see priced products",
 			req:  &catalogpb.SearchProductsRequest{},
+			want: bson.M{"priceCents": bson.M{"$exists": true}},
+		},
+		{
+			name: "staff sees everything",
+			req:  &catalogpb.SearchProductsRequest{IncludeUnpriced: true},
 			want: bson.M{},
+		},
+		{
+			name: "boxes waiting for a price ignore the price range",
+			req: &catalogpb.SearchProductsRequest{
+				Type:          catalogpb.ProductType_PRODUCT_TYPE_BOOSTER_BOX,
+				UnpricedOnly:  true,
+				MaxPriceCents: proto.Int64(3000),
+			},
+			want: bson.M{"type": "BOOSTER_BOX", "priceCents": bson.M{"$exists": false}},
 		},
 		{
 			name: "fire cards in english under 30 dollars",
@@ -45,7 +59,7 @@ func TestBuildSearchFilter(t *testing.T) {
 		},
 		{
 			name: "query is escaped",
-			req:  &catalogpb.SearchProductsRequest{Query: "ex (151)"},
+			req:  &catalogpb.SearchProductsRequest{Query: "ex (151)", IncludeUnpriced: true},
 			want: bson.M{"name": bson.M{"$regex": `ex \(151\)`, "$options": "i"}},
 		},
 	}
@@ -78,5 +92,8 @@ func TestToProtoMapsCardAndSealed(t *testing.T) {
 	sealed := toProto(&productDoc{ID: "s1", Type: "BOOSTER_BOX", SetCode: "OBF", Language: "ja"})
 	if sealed.GetSealed().GetLanguage() != "ja" || sealed.GetCard() != nil {
 		t.Errorf("sealed details = %v", sealed.GetDetails())
+	}
+	if sealed.PriceCents != nil {
+		t.Errorf("unpriced product has price %d", sealed.GetPriceCents())
 	}
 }

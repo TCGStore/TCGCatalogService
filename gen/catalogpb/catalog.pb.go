@@ -189,13 +189,15 @@ func (CardCondition) EnumDescriptor() ([]byte, []int) {
 // A product is one sellable listing: the same card in another condition,
 // language or grade is a different product with its own id and stock.
 type Product struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type        ProductType            `protobuf:"varint,3,opt,name=type,proto3,enum=tcgstore.catalog.ProductType" json:"type,omitempty"`
-	PriceCents  int64                  `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	ImageUrl    string                 `protobuf:"bytes,5,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
-	Description string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type  ProductType            `protobuf:"varint,3,opt,name=type,proto3,enum=tcgstore.catalog.ProductType" json:"type,omitempty"`
+	// Unset for sealed products the staff hasn't priced yet and for cards with no
+	// market price in the import.
+	PriceCents  *int64 `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	ImageUrl    string `protobuf:"bytes,5,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 	// Types that are valid to be assigned to Details:
 	//
 	//	*Product_Card
@@ -257,8 +259,8 @@ func (x *Product) GetType() ProductType {
 }
 
 func (x *Product) GetPriceCents() int64 {
-	if x != nil {
-		return x.PriceCents
+	if x != nil && x.PriceCents != nil {
+		return *x.PriceCents
 	}
 	return 0
 }
@@ -539,10 +541,11 @@ func (x *SealedDetails) GetLanguage() string {
 }
 
 type GetProductRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	IncludeUnpriced bool                   `protobuf:"varint,2,opt,name=include_unpriced,json=includeUnpriced,proto3" json:"include_unpriced,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetProductRequest) Reset() {
@@ -582,11 +585,19 @@ func (x *GetProductRequest) GetId() string {
 	return ""
 }
 
+func (x *GetProductRequest) GetIncludeUnpriced() bool {
+	if x != nil {
+		return x.IncludeUnpriced
+	}
+	return false
+}
+
 type GetProductsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Ids             []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	IncludeUnpriced bool                   `protobuf:"varint,2,opt,name=include_unpriced,json=includeUnpriced,proto3" json:"include_unpriced,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetProductsRequest) Reset() {
@@ -624,6 +635,13 @@ func (x *GetProductsRequest) GetIds() []string {
 		return x.Ids
 	}
 	return nil
+}
+
+func (x *GetProductsRequest) GetIncludeUnpriced() bool {
+	if x != nil {
+		return x.IncludeUnpriced
+	}
+	return false
 }
 
 type GetProductsResponse struct {
@@ -672,21 +690,23 @@ func (x *GetProductsResponse) GetProducts() []*Product {
 
 // Unset filters are ignored.
 type SearchProductsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"` // Matched against the product name.
-	Type          ProductType            `protobuf:"varint,2,opt,name=type,proto3,enum=tcgstore.catalog.ProductType" json:"type,omitempty"`
-	SetCode       string                 `protobuf:"bytes,3,opt,name=set_code,json=setCode,proto3" json:"set_code,omitempty"`
-	Language      string                 `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
-	Supertype     CardSupertype          `protobuf:"varint,5,opt,name=supertype,proto3,enum=tcgstore.catalog.CardSupertype" json:"supertype,omitempty"`
-	EnergyType    string                 `protobuf:"bytes,6,opt,name=energy_type,json=energyType,proto3" json:"energy_type,omitempty"` // Matches any value in CardDetails.types.
-	Condition     CardCondition          `protobuf:"varint,7,opt,name=condition,proto3,enum=tcgstore.catalog.CardCondition" json:"condition,omitempty"`
-	MinPriceCents *int64                 `protobuf:"varint,8,opt,name=min_price_cents,json=minPriceCents,proto3,oneof" json:"min_price_cents,omitempty"`
-	MaxPriceCents *int64                 `protobuf:"varint,9,opt,name=max_price_cents,json=maxPriceCents,proto3,oneof" json:"max_price_cents,omitempty"`
-	GradedOnly    bool                   `protobuf:"varint,10,opt,name=graded_only,json=gradedOnly,proto3" json:"graded_only,omitempty"`
-	Page          int32                  `protobuf:"varint,20,opt,name=page,proto3" json:"page,omitempty"`                         // 1-based. Defaults to 1.
-	PageSize      int32                  `protobuf:"varint,21,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // Defaults to 20, max 100.
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Query           string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"` // Matched against the product name.
+	Type            ProductType            `protobuf:"varint,2,opt,name=type,proto3,enum=tcgstore.catalog.ProductType" json:"type,omitempty"`
+	SetCode         string                 `protobuf:"bytes,3,opt,name=set_code,json=setCode,proto3" json:"set_code,omitempty"`
+	Language        string                 `protobuf:"bytes,4,opt,name=language,proto3" json:"language,omitempty"`
+	Supertype       CardSupertype          `protobuf:"varint,5,opt,name=supertype,proto3,enum=tcgstore.catalog.CardSupertype" json:"supertype,omitempty"`
+	EnergyType      string                 `protobuf:"bytes,6,opt,name=energy_type,json=energyType,proto3" json:"energy_type,omitempty"` // Matches any value in CardDetails.types.
+	Condition       CardCondition          `protobuf:"varint,7,opt,name=condition,proto3,enum=tcgstore.catalog.CardCondition" json:"condition,omitempty"`
+	MinPriceCents   *int64                 `protobuf:"varint,8,opt,name=min_price_cents,json=minPriceCents,proto3,oneof" json:"min_price_cents,omitempty"`
+	MaxPriceCents   *int64                 `protobuf:"varint,9,opt,name=max_price_cents,json=maxPriceCents,proto3,oneof" json:"max_price_cents,omitempty"`
+	GradedOnly      bool                   `protobuf:"varint,10,opt,name=graded_only,json=gradedOnly,proto3" json:"graded_only,omitempty"`
+	IncludeUnpriced bool                   `protobuf:"varint,11,opt,name=include_unpriced,json=includeUnpriced,proto3" json:"include_unpriced,omitempty"`
+	UnpricedOnly    bool                   `protobuf:"varint,12,opt,name=unpriced_only,json=unpricedOnly,proto3" json:"unpriced_only,omitempty"` // Products waiting for a price; implies include_unpriced.
+	Page            int32                  `protobuf:"varint,20,opt,name=page,proto3" json:"page,omitempty"`                                     // 1-based. Defaults to 1.
+	PageSize        int32                  `protobuf:"varint,21,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`             // Defaults to 20, max 100.
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SearchProductsRequest) Reset() {
@@ -789,6 +809,20 @@ func (x *SearchProductsRequest) GetGradedOnly() bool {
 	return false
 }
 
+func (x *SearchProductsRequest) GetIncludeUnpriced() bool {
+	if x != nil {
+		return x.IncludeUnpriced
+	}
+	return false
+}
+
+func (x *SearchProductsRequest) GetUnpricedOnly() bool {
+	if x != nil {
+		return x.UnpricedOnly
+	}
+	return false
+}
+
 func (x *SearchProductsRequest) GetPage() int32 {
 	if x != nil {
 		return x.Page
@@ -855,23 +889,77 @@ func (x *SearchProductsResponse) GetTotalCount() int32 {
 	return 0
 }
 
+type SetProductPriceRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Must be positive. Unset removes the price, which hides the product from customers.
+	PriceCents    *int64 `protobuf:"varint,2,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetProductPriceRequest) Reset() {
+	*x = SetProductPriceRequest{}
+	mi := &file_catalog_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetProductPriceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetProductPriceRequest) ProtoMessage() {}
+
+func (x *SetProductPriceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetProductPriceRequest.ProtoReflect.Descriptor instead.
+func (*SetProductPriceRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SetProductPriceRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SetProductPriceRequest) GetPriceCents() int64 {
+	if x != nil && x.PriceCents != nil {
+		return *x.PriceCents
+	}
+	return 0
+}
+
 var File_catalog_proto protoreflect.FileDescriptor
 
 const file_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\rcatalog.proto\x12\x10tcgstore.catalog\"\xbb\x02\n" +
+	"\rcatalog.proto\x12\x10tcgstore.catalog\"\xd0\x02\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x121\n" +
-	"\x04type\x18\x03 \x01(\x0e2\x1d.tcgstore.catalog.ProductTypeR\x04type\x12\x1f\n" +
-	"\vprice_cents\x18\x04 \x01(\x03R\n" +
-	"priceCents\x12\x1b\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x1d.tcgstore.catalog.ProductTypeR\x04type\x12$\n" +
+	"\vprice_cents\x18\x04 \x01(\x03H\x01R\n" +
+	"priceCents\x88\x01\x01\x12\x1b\n" +
 	"\timage_url\x18\x05 \x01(\tR\bimageUrl\x12 \n" +
 	"\vdescription\x18\x06 \x01(\tR\vdescription\x123\n" +
 	"\x04card\x18\n" +
 	" \x01(\v2\x1d.tcgstore.catalog.CardDetailsH\x00R\x04card\x129\n" +
 	"\x06sealed\x18\v \x01(\v2\x1f.tcgstore.catalog.SealedDetailsH\x00R\x06sealedB\t\n" +
-	"\adetails\"\xe9\x02\n" +
+	"\adetailsB\x0e\n" +
+	"\f_price_cents\"\xe9\x02\n" +
 	"\vCardDetails\x12\x19\n" +
 	"\bset_code\x18\x01 \x01(\tR\asetCode\x12\x19\n" +
 	"\bset_name\x18\x02 \x01(\tR\asetName\x12\x16\n" +
@@ -890,13 +978,15 @@ const file_catalog_proto_rawDesc = "" +
 	"\rSealedDetails\x12\x19\n" +
 	"\bset_code\x18\x01 \x01(\tR\asetCode\x12\x19\n" +
 	"\bset_name\x18\x02 \x01(\tR\asetName\x12\x1a\n" +
-	"\blanguage\x18\x03 \x01(\tR\blanguage\"#\n" +
+	"\blanguage\x18\x03 \x01(\tR\blanguage\"N\n" +
 	"\x11GetProductRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"&\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12)\n" +
+	"\x10include_unpriced\x18\x02 \x01(\bR\x0fincludeUnpriced\"Q\n" +
 	"\x12GetProductsRequest\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"L\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\x12)\n" +
+	"\x10include_unpriced\x18\x02 \x01(\bR\x0fincludeUnpriced\"L\n" +
 	"\x13GetProductsResponse\x125\n" +
-	"\bproducts\x18\x01 \x03(\v2\x19.tcgstore.catalog.ProductR\bproducts\"\x8a\x04\n" +
+	"\bproducts\x18\x01 \x03(\v2\x19.tcgstore.catalog.ProductR\bproducts\"\xda\x04\n" +
 	"\x15SearchProductsRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x121\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1d.tcgstore.catalog.ProductTypeR\x04type\x12\x19\n" +
@@ -910,7 +1000,9 @@ const file_catalog_proto_rawDesc = "" +
 	"\x0fmax_price_cents\x18\t \x01(\x03H\x01R\rmaxPriceCents\x88\x01\x01\x12\x1f\n" +
 	"\vgraded_only\x18\n" +
 	" \x01(\bR\n" +
-	"gradedOnly\x12\x12\n" +
+	"gradedOnly\x12)\n" +
+	"\x10include_unpriced\x18\v \x01(\bR\x0fincludeUnpriced\x12#\n" +
+	"\runpriced_only\x18\f \x01(\bR\funpricedOnly\x12\x12\n" +
 	"\x04page\x18\x14 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x15 \x01(\x05R\bpageSizeB\x12\n" +
 	"\x10_min_price_centsB\x12\n" +
@@ -918,7 +1010,12 @@ const file_catalog_proto_rawDesc = "" +
 	"\x16SearchProductsResponse\x125\n" +
 	"\bproducts\x18\x01 \x03(\v2\x19.tcgstore.catalog.ProductR\bproducts\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount*\xa3\x01\n" +
+	"totalCount\"^\n" +
+	"\x16SetProductPriceRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\vprice_cents\x18\x02 \x01(\x03H\x00R\n" +
+	"priceCents\x88\x01\x01B\x0e\n" +
+	"\f_price_cents*\xa3\x01\n" +
 	"\vProductType\x12\x1c\n" +
 	"\x18PRODUCT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11PRODUCT_TYPE_CARD\x10\x01\x12\x1d\n" +
@@ -936,12 +1033,13 @@ const file_catalog_proto_rawDesc = "" +
 	"\x1dCARD_CONDITION_LIGHTLY_PLAYED\x10\x02\x12$\n" +
 	" CARD_CONDITION_MODERATELY_PLAYED\x10\x03\x12!\n" +
 	"\x1dCARD_CONDITION_HEAVILY_PLAYED\x10\x04\x12\x1a\n" +
-	"\x16CARD_CONDITION_DAMAGED\x10\x052\x9f\x02\n" +
+	"\x16CARD_CONDITION_DAMAGED\x10\x052\xf7\x02\n" +
 	"\x0eCatalogService\x12L\n" +
 	"\n" +
 	"GetProduct\x12#.tcgstore.catalog.GetProductRequest\x1a\x19.tcgstore.catalog.Product\x12Z\n" +
 	"\vGetProducts\x12$.tcgstore.catalog.GetProductsRequest\x1a%.tcgstore.catalog.GetProductsResponse\x12c\n" +
-	"\x0eSearchProducts\x12'.tcgstore.catalog.SearchProductsRequest\x1a(.tcgstore.catalog.SearchProductsResponseB\\\n" +
+	"\x0eSearchProducts\x12'.tcgstore.catalog.SearchProductsRequest\x1a(.tcgstore.catalog.SearchProductsResponse\x12V\n" +
+	"\x0fSetProductPrice\x12(.tcgstore.catalog.SetProductPriceRequest\x1a\x19.tcgstore.catalog.ProductB\\\n" +
 	"\x19com.tcgstore.catalog.grpcP\x01Z=github.com/TCGStore/TCGCatalogService/gen/catalogpb;catalogpbb\x06proto3"
 
 var (
@@ -957,7 +1055,7 @@ func file_catalog_proto_rawDescGZIP() []byte {
 }
 
 var file_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_catalog_proto_goTypes = []any{
 	(ProductType)(0),               // 0: tcgstore.catalog.ProductType
 	(CardSupertype)(0),             // 1: tcgstore.catalog.CardSupertype
@@ -971,6 +1069,7 @@ var file_catalog_proto_goTypes = []any{
 	(*GetProductsResponse)(nil),    // 9: tcgstore.catalog.GetProductsResponse
 	(*SearchProductsRequest)(nil),  // 10: tcgstore.catalog.SearchProductsRequest
 	(*SearchProductsResponse)(nil), // 11: tcgstore.catalog.SearchProductsResponse
+	(*SetProductPriceRequest)(nil), // 12: tcgstore.catalog.SetProductPriceRequest
 }
 var file_catalog_proto_depIdxs = []int32{
 	0,  // 0: tcgstore.catalog.Product.type:type_name -> tcgstore.catalog.ProductType
@@ -987,11 +1086,13 @@ var file_catalog_proto_depIdxs = []int32{
 	7,  // 11: tcgstore.catalog.CatalogService.GetProduct:input_type -> tcgstore.catalog.GetProductRequest
 	8,  // 12: tcgstore.catalog.CatalogService.GetProducts:input_type -> tcgstore.catalog.GetProductsRequest
 	10, // 13: tcgstore.catalog.CatalogService.SearchProducts:input_type -> tcgstore.catalog.SearchProductsRequest
-	3,  // 14: tcgstore.catalog.CatalogService.GetProduct:output_type -> tcgstore.catalog.Product
-	9,  // 15: tcgstore.catalog.CatalogService.GetProducts:output_type -> tcgstore.catalog.GetProductsResponse
-	11, // 16: tcgstore.catalog.CatalogService.SearchProducts:output_type -> tcgstore.catalog.SearchProductsResponse
-	14, // [14:17] is the sub-list for method output_type
-	11, // [11:14] is the sub-list for method input_type
+	12, // 14: tcgstore.catalog.CatalogService.SetProductPrice:input_type -> tcgstore.catalog.SetProductPriceRequest
+	3,  // 15: tcgstore.catalog.CatalogService.GetProduct:output_type -> tcgstore.catalog.Product
+	9,  // 16: tcgstore.catalog.CatalogService.GetProducts:output_type -> tcgstore.catalog.GetProductsResponse
+	11, // 17: tcgstore.catalog.CatalogService.SearchProducts:output_type -> tcgstore.catalog.SearchProductsResponse
+	3,  // 18: tcgstore.catalog.CatalogService.SetProductPrice:output_type -> tcgstore.catalog.Product
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -1008,13 +1109,14 @@ func file_catalog_proto_init() {
 	}
 	file_catalog_proto_msgTypes[1].OneofWrappers = []any{}
 	file_catalog_proto_msgTypes[7].OneofWrappers = []any{}
+	file_catalog_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_proto_rawDesc), len(file_catalog_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

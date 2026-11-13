@@ -2,7 +2,7 @@
 MONGO_URI ?= mongodb://tcg:tcg@localhost:27017
 export MONGO_URI
 
-.PHONY: proto run seed test
+.PHONY: proto run seed import test
 
 # Regenerate gen/catalogpb after changing proto/catalog.proto.
 proto:
@@ -16,6 +16,10 @@ run:
 
 seed:
 	go run ./cmd/seed
+
+# Cards and prices from pokemontcg.io (needs internet). Other sets: make import SETS=sv3pt5,sv1
+import:
+	go run ./cmd/import $(if $(SETS),-sets $(SETS))
 
 test:
 	go test ./...

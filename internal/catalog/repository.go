@@ -16,6 +16,12 @@ import (
 
 var errNotFound = errors.New("product not found")
 
+// A product without a price has no priceCents field at all (see productDoc).
+var (
+	priced   = bson.M{"$exists": true}
+	unpriced = bson.M{"$exists": false}
+)
+
 type Repository struct {
 	products *mongo.Collection
 }
@@ -24,17 +30,25 @@ func NewRepository(db *mongo.Database) *Repository {
 	return &Repository{products: db.Collection("products")}
 }
 
-func (r *Repository) FindByID(ctx context.Context, id string) (*productDoc, error) {
+func (r *Repository) FindByID(ctx context.Context, id string, includeUnpriced bool) (*productDoc, error) {
+	filter := bson.M{"_id": id}
+	if !includeUnpriced {
+		filter["priceCents"] = priced
+	}
 	var doc productDoc
-	err := r.products.FindOne(ctx, bson.M{"_id": id}).Decode(&doc)
+	err := r.products.FindOne(ctx, filter).Decode(&doc)
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errNotFound
 	}
 	return &doc, err
 }
 
-func (r *Repository) FindByIDs(ctx context.Context, ids []string) ([]productDoc, error) {
-	cursor, err := r.products.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+func (r *Repository) FindByIDs(ctx context.Context, ids []string, includeUnpriced bool) ([]productDoc, error) {
+	filter := bson.M{"_id": bson.M{"$in": ids}}
+	if !includeUnpriced {
+		filter["priceCents"] = priced
+	}
+	cursor, err := r.products.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -62,19 +76,58 @@ func (r *Repository) Search(ctx context.Context, filter bson.M, page, pageSize i
 	return docs, total, err
 }
 
-// Seed upserts every product in a JSON array, so running it twice doesn't duplicate data.
+// Seed inserts the products that don't exist yet. Existing ones are left alone, so
+// running it again doesn't undo prices set by the staff.
 func (r *Repository) Seed(ctx context.Context, productsJSON []byte) (int, error) {
 	var docs []productDoc
 	if err := json.Unmarshal(productsJSON, &docs); err != nil {
 		return 0, fmt.Errorf("parse seed data: %w", err)
 	}
+	inserted := 0
 	for _, doc := range docs {
-		_, err := r.products.ReplaceOne(ctx, bson.M{"_id": doc.ID}, doc, options.Replace().SetUpsert(true))
-		if err != nil {
-			return 0, fmt.Errorf("upsert %s: %w", doc.ID, err)
+		_, err := r.products.InsertOne(ctx, doc)
+		if mongo.IsDuplicateKeyError(err) {
+			continue
 		}
+		if err != nil {
+			return 0, fmt.Errorf("insert %s: %w", doc.ID, err)
+		}
+		inserted++
 	}
-	return len(docs), nil
+	return inserted, nil
+}
+
+// SetPrice sets or, with nil, removes the price. It returns errNotFound if the
+// product doesn't exist.
+func (r *Repository) SetPrice(ctx context.Context, id string, priceCents *int64) (*productDoc, error) {
+	update := bson.M{"$unset": bson.M{"priceCents": ""}}
+	if priceCents != nil {
+		update = bson.M{"$set": bson.M{"priceCents": *priceCents}}
+	}
+	var doc productDoc
+	err := r.products.FindOneAndUpdate(ctx, bson.M{"_id": id}, update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&doc)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, errNotFound
+	}
+	return &doc, err
+}
+
+// upsertCards writes imported cards in one round trip. Each card replaces the
+// stored one entirely, so a card that lost its market price becomes hidden.
+func (r *Repository) upsertCards(ctx context.Context, docs []productDoc) error {
+	if len(docs) == 0 {
+		return nil
+	}
+	models := make([]mongo.WriteModel, len(docs))
+	for i, doc := range docs {
+		models[i] = mongo.NewReplaceOneModel().
+			SetFilter(bson.M{"_id": doc.ID}).
+			SetReplacement(doc).
+			SetUpsert(true)
+	}
+	_, err := r.products.BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false))
+	return err
 }
 
 func buildSearchFilter(req *catalogpb.SearchProductsRequest) bson.M {
@@ -106,6 +159,15 @@ func buildSearchFilter(req *catalogpb.SearchProductsRequest) bson.M {
 		filter["card.grading"] = bson.M{"$exists": true}
 	}
 
+	switch {
+	case req.GetUnpricedOnly():
+		// A price range can't match a product without a price, so it's ignored here.
+		filter["priceCents"] = unpriced
+		return filter
+	case !req.GetIncludeUnpriced():
+		filter["priceCents"] = priced
+	}
+
 	price := bson.M{}
 	if req.MinPriceCents != nil {
 		price["$gte"] = req.GetMinPriceCents()
@@ -114,6 +176,7 @@ func buildSearchFilter(req *catalogpb.SearchProductsRequest) bson.M {
 		price["$lte"] = req.GetMaxPriceCents()
 	}
 	if len(price) > 0 {
+		// A range already leaves out products without a price.
 		filter["priceCents"] = price
 	}
 

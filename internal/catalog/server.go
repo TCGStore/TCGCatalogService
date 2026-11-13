@@ -31,7 +31,7 @@ func (s *Server) GetProduct(ctx context.Context, req *catalogpb.GetProductReques
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}
 
-	doc, err := s.repo.FindByID(ctx, req.GetId())
+	doc, err := s.repo.FindByID(ctx, req.GetId(), req.GetIncludeUnpriced())
 	if errors.Is(err, errNotFound) {
 		return nil, status.Errorf(codes.NotFound, "product %q not found", req.GetId())
 	}
@@ -49,7 +49,7 @@ func (s *Server) GetProducts(ctx context.Context, req *catalogpb.GetProductsRequ
 		return &catalogpb.GetProductsResponse{}, nil
 	}
 
-	docs, err := s.repo.FindByIDs(ctx, req.GetIds())
+	docs, err := s.repo.FindByIDs(ctx, req.GetIds(), req.GetIncludeUnpriced())
 	if err != nil {
 		return nil, internalError("get products", err)
 	}
@@ -70,6 +70,33 @@ func (s *Server) SearchProducts(ctx context.Context, req *catalogpb.SearchProduc
 		return nil, internalError("search products", err)
 	}
 	return &catalogpb.SearchProductsResponse{Products: toProtoList(docs), TotalCount: int32(total)}, nil
+}
+
+func (s *Server) SetProductPrice(ctx context.Context, req *catalogpb.SetProductPriceRequest) (*catalogpb.Product, error) {
+	if req.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	if req.PriceCents != nil && req.GetPriceCents() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "price_cents must be positive; leave it unset to remove the price")
+	}
+
+	doc, err := s.repo.FindByID(ctx, req.GetId(), true)
+	if errors.Is(err, errNotFound) {
+		return nil, status.Errorf(codes.NotFound, "product %q not found", req.GetId())
+	}
+	if err != nil {
+		return nil, internalError("set product price", err)
+	}
+	// The next import would overwrite a manual card price anyway.
+	if doc.Card != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "%q is a card: card prices come from the pokemontcg.io import", req.GetId())
+	}
+
+	doc, err = s.repo.SetPrice(ctx, req.GetId(), req.PriceCents)
+	if err != nil {
+		return nil, internalError("set product price", err)
+	}
+	return toProto(doc), nil
 }
 
 func normalizePage(page, pageSize int32) (int64, int64, error) {

@@ -10,7 +10,8 @@ import (
 	"github.com/TCGStore/TCGCatalogService/internal/config"
 )
 
-// Product ids here are shared with inventory-service's seed; keep them in sync.
+// Only sealed products, without a price: the staff sets it from the store. Cards
+// come from cmd/import. Ids are shared with inventory-service's seed.
 //
 //go:embed products.json
 var productsJSON []byte
