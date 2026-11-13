@@ -6,7 +6,7 @@ type productDoc struct {
 	ID          string   `bson:"_id" json:"id"`
 	Name        string   `bson:"name" json:"name"`
 	Type        string   `bson:"type" json:"type"`
-	PriceCents  int64    `bson:"priceCents" json:"priceCents"`
+	PriceCents  *int64   `bson:"priceCents,omitempty" json:"priceCents,omitempty"` // nil = hidden from customers
 	ImageURL    string   `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"`
 	Description string   `bson:"description,omitempty" json:"description,omitempty"`
 	SetCode     string   `bson:"setCode" json:"setCode"`

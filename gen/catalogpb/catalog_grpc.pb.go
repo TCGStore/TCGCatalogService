@@ -19,19 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_GetProduct_FullMethodName     = "/tcgstore.catalog.CatalogService/GetProduct"
-	CatalogService_GetProducts_FullMethodName    = "/tcgstore.catalog.CatalogService/GetProducts"
-	CatalogService_SearchProducts_FullMethodName = "/tcgstore.catalog.CatalogService/SearchProducts"
+	CatalogService_GetProduct_FullMethodName      = "/tcgstore.catalog.CatalogService/GetProduct"
+	CatalogService_GetProducts_FullMethodName     = "/tcgstore.catalog.CatalogService/GetProducts"
+	CatalogService_SearchProducts_FullMethodName  = "/tcgstore.catalog.CatalogService/SearchProducts"
+	CatalogService_SetProductPrice_FullMethodName = "/tcgstore.catalog.CatalogService/SetProductPrice"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// Products without a price are hidden (NOT_FOUND or left out) unless the request
+// sets include_unpriced, which only the BFF does, and only for admins.
 type CatalogServiceClient interface {
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*Product, error)
 	// Missing ids are skipped, so the response can be shorter than the request.
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 	SearchProducts(ctx context.Context, in *SearchProductsRequest, opts ...grpc.CallOption) (*SearchProductsResponse, error)
+	// Sealed products only: FAILED_PRECONDITION for cards, whose price comes from the
+	// pokemontcg.io import.
+	SetProductPrice(ctx context.Context, in *SetProductPriceRequest, opts ...grpc.CallOption) (*Product, error)
 }
 
 type catalogServiceClient struct {
@@ -72,14 +79,30 @@ func (c *catalogServiceClient) SearchProducts(ctx context.Context, in *SearchPro
 	return out, nil
 }
 
+func (c *catalogServiceClient) SetProductPrice(ctx context.Context, in *SetProductPriceRequest, opts ...grpc.CallOption) (*Product, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Product)
+	err := c.cc.Invoke(ctx, CatalogService_SetProductPrice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
+//
+// Products without a price are hidden (NOT_FOUND or left out) unless the request
+// sets include_unpriced, which only the BFF does, and only for admins.
 type CatalogServiceServer interface {
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
 	// Missing ids are skipped, so the response can be shorter than the request.
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error)
+	// Sealed products only: FAILED_PRECONDITION for cards, whose price comes from the
+	// pokemontcg.io import.
+	SetProductPrice(context.Context, *SetProductPriceRequest) (*Product, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -98,6 +121,9 @@ func (UnimplementedCatalogServiceServer) GetProducts(context.Context, *GetProduc
 }
 func (UnimplementedCatalogServiceServer) SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchProducts not implemented")
+}
+func (UnimplementedCatalogServiceServer) SetProductPrice(context.Context, *SetProductPriceRequest) (*Product, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetProductPrice not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -174,6 +200,24 @@ func _CatalogService_SearchProducts_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_SetProductPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetProductPriceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).SetProductPrice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_SetProductPrice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).SetProductPrice(ctx, req.(*SetProductPriceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -192,6 +236,10 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchProducts",
 			Handler:    _CatalogService_SearchProducts_Handler,
+		},
+		{
+			MethodName: "SetProductPrice",
+			Handler:    _CatalogService_SetProductPrice_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
