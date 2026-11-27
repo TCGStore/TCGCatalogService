@@ -14,7 +14,10 @@ import (
 	"github.com/TCGStore/TCGCatalogService/gen/catalogpb"
 )
 
-var errNotFound = errors.New("product not found")
+var (
+	errNotFound      = errors.New("product not found")
+	errAlreadyExists = errors.New("product already exists")
+)
 
 // A product without a price has no priceCents field at all (see productDoc).
 var (
@@ -103,6 +106,38 @@ func (r *Repository) SetPrice(ctx context.Context, id string, priceCents *int64)
 	update := bson.M{"$unset": bson.M{"priceCents": ""}}
 	if priceCents != nil {
 		update = bson.M{"$set": bson.M{"priceCents": *priceCents}}
+	}
+	var doc productDoc
+	err := r.products.FindOneAndUpdate(ctx, bson.M{"_id": id}, update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After)).Decode(&doc)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, errNotFound
+	}
+	return &doc, err
+}
+
+// Insert returns errAlreadyExists if a product with the same id exists.
+func (r *Repository) Insert(ctx context.Context, doc *productDoc) error {
+	_, err := r.products.InsertOne(ctx, doc)
+	if mongo.IsDuplicateKeyError(err) {
+		return errAlreadyExists
+	}
+	return err
+}
+
+// Update sets the given fields and removes the ones in unset. It returns errNotFound
+// if the product doesn't exist.
+func (r *Repository) Update(ctx context.Context, id string, set bson.M, unset []string) (*productDoc, error) {
+	update := bson.M{}
+	if len(set) > 0 {
+		update["$set"] = set
+	}
+	if len(unset) > 0 {
+		fields := bson.M{}
+		for _, field := range unset {
+			fields[field] = ""
+		}
+		update["$unset"] = fields
 	}
 	var doc productDoc
 	err := r.products.FindOneAndUpdate(ctx, bson.M{"_id": id}, update,
