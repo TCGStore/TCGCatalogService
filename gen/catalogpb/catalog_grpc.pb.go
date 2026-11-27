@@ -23,6 +23,8 @@ const (
 	CatalogService_GetProducts_FullMethodName     = "/tcgstore.catalog.CatalogService/GetProducts"
 	CatalogService_SearchProducts_FullMethodName  = "/tcgstore.catalog.CatalogService/SearchProducts"
 	CatalogService_SetProductPrice_FullMethodName = "/tcgstore.catalog.CatalogService/SetProductPrice"
+	CatalogService_CreateProduct_FullMethodName   = "/tcgstore.catalog.CatalogService/CreateProduct"
+	CatalogService_UpdateProduct_FullMethodName   = "/tcgstore.catalog.CatalogService/UpdateProduct"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -36,9 +38,16 @@ type CatalogServiceClient interface {
 	// Missing ids are skipped, so the response can be shorter than the request.
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 	SearchProducts(ctx context.Context, in *SearchProductsRequest, opts ...grpc.CallOption) (*SearchProductsResponse, error)
-	// Sealed products only: FAILED_PRECONDITION for cards, whose price comes from the
-	// pokemontcg.io import.
+	// The writes below are for staff only: the BFF and the MCP server check the admin role.
+	// Imported cards are owned by the pokemontcg.io import, which would overwrite manual
+	// changes, so they answer FAILED_PRECONDITION. Sealed products and the card listings
+	// created with CreateProduct can be changed.
 	SetProductPrice(ctx context.Context, in *SetProductPriceRequest, opts ...grpc.CallOption) (*Product, error)
+	// The id is built from the product's data, so the same listing can't be created twice
+	// (ALREADY_EXISTS): prd_obf_box_en, prd_mew_006_en_lp, prd_mew_006_en_nm_psa10.
+	CreateProduct(ctx context.Context, in *CreateProductRequest, opts ...grpc.CallOption) (*Product, error)
+	// Changes only the fields set in the request.
+	UpdateProduct(ctx context.Context, in *UpdateProductRequest, opts ...grpc.CallOption) (*Product, error)
 }
 
 type catalogServiceClient struct {
@@ -89,6 +98,26 @@ func (c *catalogServiceClient) SetProductPrice(ctx context.Context, in *SetProdu
 	return out, nil
 }
 
+func (c *catalogServiceClient) CreateProduct(ctx context.Context, in *CreateProductRequest, opts ...grpc.CallOption) (*Product, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Product)
+	err := c.cc.Invoke(ctx, CatalogService_CreateProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdateProduct(ctx context.Context, in *UpdateProductRequest, opts ...grpc.CallOption) (*Product, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Product)
+	err := c.cc.Invoke(ctx, CatalogService_UpdateProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -100,9 +129,16 @@ type CatalogServiceServer interface {
 	// Missing ids are skipped, so the response can be shorter than the request.
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error)
-	// Sealed products only: FAILED_PRECONDITION for cards, whose price comes from the
-	// pokemontcg.io import.
+	// The writes below are for staff only: the BFF and the MCP server check the admin role.
+	// Imported cards are owned by the pokemontcg.io import, which would overwrite manual
+	// changes, so they answer FAILED_PRECONDITION. Sealed products and the card listings
+	// created with CreateProduct can be changed.
 	SetProductPrice(context.Context, *SetProductPriceRequest) (*Product, error)
+	// The id is built from the product's data, so the same listing can't be created twice
+	// (ALREADY_EXISTS): prd_obf_box_en, prd_mew_006_en_lp, prd_mew_006_en_nm_psa10.
+	CreateProduct(context.Context, *CreateProductRequest) (*Product, error)
+	// Changes only the fields set in the request.
+	UpdateProduct(context.Context, *UpdateProductRequest) (*Product, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -124,6 +160,12 @@ func (UnimplementedCatalogServiceServer) SearchProducts(context.Context, *Search
 }
 func (UnimplementedCatalogServiceServer) SetProductPrice(context.Context, *SetProductPriceRequest) (*Product, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetProductPrice not implemented")
+}
+func (UnimplementedCatalogServiceServer) CreateProduct(context.Context, *CreateProductRequest) (*Product, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateProduct not implemented")
+}
+func (UnimplementedCatalogServiceServer) UpdateProduct(context.Context, *UpdateProductRequest) (*Product, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateProduct not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -218,6 +260,42 @@ func _CatalogService_SetProductPrice_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_CreateProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).CreateProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_CreateProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).CreateProduct(ctx, req.(*CreateProductRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_UpdateProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).UpdateProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_UpdateProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).UpdateProduct(ctx, req.(*UpdateProductRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +318,14 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetProductPrice",
 			Handler:    _CatalogService_SetProductPrice_Handler,
+		},
+		{
+			MethodName: "CreateProduct",
+			Handler:    _CatalogService_CreateProduct_Handler,
+		},
+		{
+			MethodName: "UpdateProduct",
+			Handler:    _CatalogService_UpdateProduct_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

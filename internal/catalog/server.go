@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -80,23 +82,101 @@ func (s *Server) SetProductPrice(ctx context.Context, req *catalogpb.SetProductP
 		return nil, status.Error(codes.InvalidArgument, "price_cents must be positive; leave it unset to remove the price")
 	}
 
-	doc, err := s.repo.FindByID(ctx, req.GetId(), true)
-	if errors.Is(err, errNotFound) {
-		return nil, status.Errorf(codes.NotFound, "product %q not found", req.GetId())
-	}
+	doc, err := s.findEditable(ctx, req.GetId(), "set product price")
 	if err != nil {
-		return nil, internalError("set product price", err)
+		return nil, err
 	}
-	// The next import would overwrite a manual card price anyway.
-	if doc.Card != nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "%q is a card: card prices come from the pokemontcg.io import", req.GetId())
+	if req.GetValidateOnly() {
+		return toProto(doc), nil
 	}
-
 	doc, err = s.repo.SetPrice(ctx, req.GetId(), req.PriceCents)
 	if err != nil {
 		return nil, internalError("set product price", err)
 	}
 	return toProto(doc), nil
+}
+
+func (s *Server) CreateProduct(ctx context.Context, req *catalogpb.CreateProductRequest) (*catalogpb.Product, error) {
+	doc, err := newProductDoc(req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if req.GetValidateOnly() {
+		_, err = s.repo.FindByID(ctx, doc.ID, true)
+		if err == nil {
+			err = errAlreadyExists
+		} else if errors.Is(err, errNotFound) {
+			err = nil
+		}
+	} else {
+		err = s.repo.Insert(ctx, doc)
+	}
+	if errors.Is(err, errAlreadyExists) {
+		return nil, status.Errorf(codes.AlreadyExists, "product %q already exists", doc.ID)
+	}
+	if err != nil {
+		return nil, internalError("create product", err)
+	}
+	if !req.GetValidateOnly() {
+		slog.Info("product created", "id", doc.ID)
+	}
+	return toProto(doc), nil
+}
+
+func (s *Server) UpdateProduct(ctx context.Context, req *catalogpb.UpdateProductRequest) (*catalogpb.Product, error) {
+	if req.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id is required")
+	}
+	set, unset := bson.M{}, []string{}
+	if req.Name != nil {
+		name := strings.TrimSpace(req.GetName())
+		if name == "" {
+			return nil, status.Error(codes.InvalidArgument, "name can't be empty")
+		}
+		set["name"] = name
+	}
+	for field, value := range map[string]*string{"imageUrl": req.ImageUrl, "description": req.Description} {
+		switch {
+		case value == nil:
+		case strings.TrimSpace(*value) == "":
+			unset = append(unset, field)
+		default:
+			set[field] = strings.TrimSpace(*value)
+		}
+	}
+	if len(set) == 0 && len(unset) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "nothing to update: set name, image_url or description")
+	}
+
+	doc, err := s.findEditable(ctx, req.GetId(), "update product")
+	if err != nil {
+		return nil, err
+	}
+	if req.GetValidateOnly() {
+		return toProto(doc), nil
+	}
+	doc, err = s.repo.Update(ctx, req.GetId(), set, unset)
+	if err != nil {
+		return nil, internalError("update product", err)
+	}
+	return toProto(doc), nil
+}
+
+// findEditable rejects missing products and imported cards, whose data the next
+// import would overwrite.
+func (s *Server) findEditable(ctx context.Context, id, op string) (*productDoc, error) {
+	doc, err := s.repo.FindByID(ctx, id, true)
+	if errors.Is(err, errNotFound) {
+		return nil, status.Errorf(codes.NotFound, "product %q not found", id)
+	}
+	if err != nil {
+		return nil, internalError(op, err)
+	}
+	if doc.imported() {
+		return nil, status.Errorf(codes.FailedPrecondition,
+			"%q is an imported card: its data and price come from the pokemontcg.io import", id)
+	}
+	return doc, nil
 }
 
 func normalizePage(page, pageSize int32) (int64, int64, error) {

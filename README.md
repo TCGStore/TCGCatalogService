@@ -7,16 +7,29 @@ Go + MongoDB. Cartas y producto sellado. Implementa `proto/catalog.proto` en el 
 | | Datos y precio | Cómo se cargan |
 |---|---|---|
 | **Cartas individuales** | De la API pública [pokemontcg.io](https://docs.pokemontcg.io): nombre, set, número, rareza, tipos, imagen y el precio de mercado de TCGplayer (USD) | `cmd/import` |
-| **Producto sellado** (sobres, booster boxes, ETBs) | La API no los tiene. Se crean con el seed **sin precio** y el staff (admin) les pone precio desde el BFF | `cmd/seed` + RPC `SetProductPrice` |
+| **Producto sellado** (sobres, booster boxes, ETBs) | La API no los tiene. Se crean con el seed **sin precio** y el staff (admin) les pone precio desde el BFF o el agente | `cmd/seed` + RPC `SetProductPrice` |
+| **Publicaciones del staff** | Producto sellado nuevo, o una carta del catálogo en otra condición, idioma o gradeada (ej. Charizard ex PSA 10) | RPC `CreateProduct` |
 
 **Un producto sin precio no lo ve ningún cliente.** `GetProduct`, `GetProducts` y
 `SearchProducts` lo ocultan salvo que la petición traiga `include_unpriced: true`, y eso
 solo lo hace el BFF cuando quien pregunta es admin. Como orders-service no lo manda,
 tampoco se puede agregar al carrito ni comprar.
 
-`SetProductPrice` rechaza las cartas (`FAILED_PRECONDITION`): el siguiente import pisaría
-el precio puesto a mano. Si la API no tiene precio para una carta, esa carta queda oculta
-hasta un import que sí lo traiga.
+### Qué puede cambiar el staff
+
+`SetProductPrice` y `UpdateProduct` (nombre, descripción, imagen) rechazan las **cartas
+importadas** (`FAILED_PRECONDITION`), porque el siguiente import pisaría lo puesto a mano. Si
+la API no tiene precio para una carta, esa carta queda oculta hasta un import que sí lo traiga.
+Sí se pueden cambiar el producto sellado y las cartas creadas con `CreateProduct`, que quedan
+marcadas con `createdByStaff` en MongoDB.
+
+`CreateProduct` arma el id con los datos del producto, igual que el seed y el import:
+`prd_ssp_box_en`, `prd_mew_006_en_lp`, `prd_mew_006_en_nm_psa10`. Por eso el mismo producto
+no se puede crear dos veces (`ALREADY_EXISTS`). No crea cartas en inglés, Near Mint y sin
+gradeo: ese id es del import, que la reemplazaría.
+
+Las tres RPCs aceptan `validate_only`: revisan todo (duplicados incluidos) sin escribir. El
+agente lo usa para avisar del error antes de mostrar el botón "Confirmar".
 
 ### El import de cartas
 
@@ -91,6 +104,13 @@ grpcurl -plaintext -d '{"unpriced_only":true}' \
   localhost:50051 tcgstore.catalog.CatalogService/SearchProducts
 grpcurl -plaintext -d '{"id":"prd_obf_box_en","price_cents":14999}' \
   localhost:50051 tcgstore.catalog.CatalogService/SetProductPrice
+
+# una copia gradeada de una carta importada
+grpcurl -plaintext -d '{"name":"Charizard ex","type":"PRODUCT_TYPE_CARD","price_cents":45000,
+  "card":{"set_code":"MEW","set_name":"151","number":"006/165","language":"en",
+  "supertype":"CARD_SUPERTYPE_POKEMON","types":["Fire"],"condition":"CARD_CONDITION_NEAR_MINT",
+  "grading":{"company":"PSA","grade":"10"}}}' \
+  localhost:50051 tcgstore.catalog.CatalogService/CreateProduct
 ```
 
 ## Variables de entorno

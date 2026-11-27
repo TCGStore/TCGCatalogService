@@ -13,6 +13,15 @@ type productDoc struct {
 	SetName     string   `bson:"setName" json:"setName"`
 	Language    string   `bson:"language" json:"language"`
 	Card        *cardDoc `bson:"card,omitempty" json:"card,omitempty"`
+	// Card listings made with CreateProduct (another condition, language or grading).
+	// The import never writes their ids, so the staff can price and edit them.
+	CreatedByStaff bool `bson:"createdByStaff,omitempty" json:"createdByStaff,omitempty"`
+}
+
+// imported reports whether the pokemontcg.io import owns the product: it replaces the
+// whole document on every run, so manual changes would be lost.
+func (d *productDoc) imported() bool {
+	return d.Card != nil && !d.CreatedByStaff
 }
 
 type cardDoc struct {

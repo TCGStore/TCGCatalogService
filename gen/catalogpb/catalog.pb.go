@@ -893,7 +893,9 @@ type SetProductPriceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Must be positive. Unset removes the price, which hides the product from customers.
-	PriceCents    *int64 `protobuf:"varint,2,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	PriceCents *int64 `protobuf:"varint,2,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	// Checks the request without writing and returns the product as it is now.
+	ValidateOnly  bool `protobuf:"varint,3,opt,name=validate_only,json=validateOnly,proto3" json:"validate_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -940,6 +942,228 @@ func (x *SetProductPriceRequest) GetPriceCents() int64 {
 		return *x.PriceCents
 	}
 	return 0
+}
+
+func (x *SetProductPriceRequest) GetValidateOnly() bool {
+	if x != nil {
+		return x.ValidateOnly
+	}
+	return false
+}
+
+type CreateProductRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type  ProductType            `protobuf:"varint,2,opt,name=type,proto3,enum=tcgstore.catalog.ProductType" json:"type,omitempty"` // CARD needs card details; the other types need sealed details.
+	// Unset creates the product hidden from customers until it gets a price.
+	PriceCents  *int64 `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	ImageUrl    string `protobuf:"bytes,4,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	// Checks the request, duplicates included, and returns the product that would be
+	// created, with its id, without writing it.
+	ValidateOnly bool `protobuf:"varint,6,opt,name=validate_only,json=validateOnly,proto3" json:"validate_only,omitempty"`
+	// Types that are valid to be assigned to Details:
+	//
+	//	*CreateProductRequest_Card
+	//	*CreateProductRequest_Sealed
+	Details       isCreateProductRequest_Details `protobuf_oneof:"details"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProductRequest) Reset() {
+	*x = CreateProductRequest{}
+	mi := &file_catalog_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProductRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProductRequest) ProtoMessage() {}
+
+func (x *CreateProductRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProductRequest.ProtoReflect.Descriptor instead.
+func (*CreateProductRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CreateProductRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetType() ProductType {
+	if x != nil {
+		return x.Type
+	}
+	return ProductType_PRODUCT_TYPE_UNSPECIFIED
+}
+
+func (x *CreateProductRequest) GetPriceCents() int64 {
+	if x != nil && x.PriceCents != nil {
+		return *x.PriceCents
+	}
+	return 0
+}
+
+func (x *CreateProductRequest) GetImageUrl() string {
+	if x != nil {
+		return x.ImageUrl
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetValidateOnly() bool {
+	if x != nil {
+		return x.ValidateOnly
+	}
+	return false
+}
+
+func (x *CreateProductRequest) GetDetails() isCreateProductRequest_Details {
+	if x != nil {
+		return x.Details
+	}
+	return nil
+}
+
+func (x *CreateProductRequest) GetCard() *CardDetails {
+	if x != nil {
+		if x, ok := x.Details.(*CreateProductRequest_Card); ok {
+			return x.Card
+		}
+	}
+	return nil
+}
+
+func (x *CreateProductRequest) GetSealed() *SealedDetails {
+	if x != nil {
+		if x, ok := x.Details.(*CreateProductRequest_Sealed); ok {
+			return x.Sealed
+		}
+	}
+	return nil
+}
+
+type isCreateProductRequest_Details interface {
+	isCreateProductRequest_Details()
+}
+
+type CreateProductRequest_Card struct {
+	// Required: set_code, number, language and condition. Usually a copy of an imported
+	// card with another condition, language or grading.
+	Card *CardDetails `protobuf:"bytes,10,opt,name=card,proto3,oneof"`
+}
+
+type CreateProductRequest_Sealed struct {
+	// Required: set_code and language.
+	Sealed *SealedDetails `protobuf:"bytes,11,opt,name=sealed,proto3,oneof"`
+}
+
+func (*CreateProductRequest_Card) isCreateProductRequest_Details() {}
+
+func (*CreateProductRequest_Sealed) isCreateProductRequest_Details() {}
+
+// Set and language aren't editable because the id is built from them: create a new
+// listing instead.
+type UpdateProductRequest struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	ImageUrl    *string                `protobuf:"bytes,3,opt,name=image_url,json=imageUrl,proto3,oneof" json:"image_url,omitempty"`
+	Description *string                `protobuf:"bytes,4,opt,name=description,proto3,oneof" json:"description,omitempty"` // Empty string removes it.
+	// Checks the request without writing and returns the product as it is now.
+	ValidateOnly  bool `protobuf:"varint,5,opt,name=validate_only,json=validateOnly,proto3" json:"validate_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProductRequest) Reset() {
+	*x = UpdateProductRequest{}
+	mi := &file_catalog_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProductRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProductRequest) ProtoMessage() {}
+
+func (x *UpdateProductRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProductRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProductRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *UpdateProductRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetImageUrl() string {
+	if x != nil && x.ImageUrl != nil {
+		return *x.ImageUrl
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetValidateOnly() bool {
+	if x != nil {
+		return x.ValidateOnly
+	}
+	return false
 }
 
 var File_catalog_proto protoreflect.FileDescriptor
@@ -1010,12 +1234,36 @@ const file_catalog_proto_rawDesc = "" +
 	"\x16SearchProductsResponse\x125\n" +
 	"\bproducts\x18\x01 \x03(\v2\x19.tcgstore.catalog.ProductR\bproducts\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount\"^\n" +
+	"totalCount\"\x83\x01\n" +
 	"\x16SetProductPriceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
 	"\vprice_cents\x18\x02 \x01(\x03H\x00R\n" +
-	"priceCents\x88\x01\x01B\x0e\n" +
-	"\f_price_cents*\xa3\x01\n" +
+	"priceCents\x88\x01\x01\x12#\n" +
+	"\rvalidate_only\x18\x03 \x01(\bR\fvalidateOnlyB\x0e\n" +
+	"\f_price_cents\"\xf2\x02\n" +
+	"\x14CreateProductRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x121\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x1d.tcgstore.catalog.ProductTypeR\x04type\x12$\n" +
+	"\vprice_cents\x18\x03 \x01(\x03H\x01R\n" +
+	"priceCents\x88\x01\x01\x12\x1b\n" +
+	"\timage_url\x18\x04 \x01(\tR\bimageUrl\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12#\n" +
+	"\rvalidate_only\x18\x06 \x01(\bR\fvalidateOnly\x123\n" +
+	"\x04card\x18\n" +
+	" \x01(\v2\x1d.tcgstore.catalog.CardDetailsH\x00R\x04card\x129\n" +
+	"\x06sealed\x18\v \x01(\v2\x1f.tcgstore.catalog.SealedDetailsH\x00R\x06sealedB\t\n" +
+	"\adetailsB\x0e\n" +
+	"\f_price_cents\"\xd4\x01\n" +
+	"\x14UpdateProductRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x88\x01\x01\x12 \n" +
+	"\timage_url\x18\x03 \x01(\tH\x01R\bimageUrl\x88\x01\x01\x12%\n" +
+	"\vdescription\x18\x04 \x01(\tH\x02R\vdescription\x88\x01\x01\x12#\n" +
+	"\rvalidate_only\x18\x05 \x01(\bR\fvalidateOnlyB\a\n" +
+	"\x05_nameB\f\n" +
+	"\n" +
+	"_image_urlB\x0e\n" +
+	"\f_description*\xa3\x01\n" +
 	"\vProductType\x12\x1c\n" +
 	"\x18PRODUCT_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11PRODUCT_TYPE_CARD\x10\x01\x12\x1d\n" +
@@ -1033,13 +1281,15 @@ const file_catalog_proto_rawDesc = "" +
 	"\x1dCARD_CONDITION_LIGHTLY_PLAYED\x10\x02\x12$\n" +
 	" CARD_CONDITION_MODERATELY_PLAYED\x10\x03\x12!\n" +
 	"\x1dCARD_CONDITION_HEAVILY_PLAYED\x10\x04\x12\x1a\n" +
-	"\x16CARD_CONDITION_DAMAGED\x10\x052\xf7\x02\n" +
+	"\x16CARD_CONDITION_DAMAGED\x10\x052\x9f\x04\n" +
 	"\x0eCatalogService\x12L\n" +
 	"\n" +
 	"GetProduct\x12#.tcgstore.catalog.GetProductRequest\x1a\x19.tcgstore.catalog.Product\x12Z\n" +
 	"\vGetProducts\x12$.tcgstore.catalog.GetProductsRequest\x1a%.tcgstore.catalog.GetProductsResponse\x12c\n" +
 	"\x0eSearchProducts\x12'.tcgstore.catalog.SearchProductsRequest\x1a(.tcgstore.catalog.SearchProductsResponse\x12V\n" +
-	"\x0fSetProductPrice\x12(.tcgstore.catalog.SetProductPriceRequest\x1a\x19.tcgstore.catalog.ProductB\\\n" +
+	"\x0fSetProductPrice\x12(.tcgstore.catalog.SetProductPriceRequest\x1a\x19.tcgstore.catalog.Product\x12R\n" +
+	"\rCreateProduct\x12&.tcgstore.catalog.CreateProductRequest\x1a\x19.tcgstore.catalog.Product\x12R\n" +
+	"\rUpdateProduct\x12&.tcgstore.catalog.UpdateProductRequest\x1a\x19.tcgstore.catalog.ProductB\\\n" +
 	"\x19com.tcgstore.catalog.grpcP\x01Z=github.com/TCGStore/TCGCatalogService/gen/catalogpb;catalogpbb\x06proto3"
 
 var (
@@ -1055,7 +1305,7 @@ func file_catalog_proto_rawDescGZIP() []byte {
 }
 
 var file_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_catalog_proto_goTypes = []any{
 	(ProductType)(0),               // 0: tcgstore.catalog.ProductType
 	(CardSupertype)(0),             // 1: tcgstore.catalog.CardSupertype
@@ -1070,6 +1320,8 @@ var file_catalog_proto_goTypes = []any{
 	(*SearchProductsRequest)(nil),  // 10: tcgstore.catalog.SearchProductsRequest
 	(*SearchProductsResponse)(nil), // 11: tcgstore.catalog.SearchProductsResponse
 	(*SetProductPriceRequest)(nil), // 12: tcgstore.catalog.SetProductPriceRequest
+	(*CreateProductRequest)(nil),   // 13: tcgstore.catalog.CreateProductRequest
+	(*UpdateProductRequest)(nil),   // 14: tcgstore.catalog.UpdateProductRequest
 }
 var file_catalog_proto_depIdxs = []int32{
 	0,  // 0: tcgstore.catalog.Product.type:type_name -> tcgstore.catalog.ProductType
@@ -1083,19 +1335,26 @@ var file_catalog_proto_depIdxs = []int32{
 	1,  // 8: tcgstore.catalog.SearchProductsRequest.supertype:type_name -> tcgstore.catalog.CardSupertype
 	2,  // 9: tcgstore.catalog.SearchProductsRequest.condition:type_name -> tcgstore.catalog.CardCondition
 	3,  // 10: tcgstore.catalog.SearchProductsResponse.products:type_name -> tcgstore.catalog.Product
-	7,  // 11: tcgstore.catalog.CatalogService.GetProduct:input_type -> tcgstore.catalog.GetProductRequest
-	8,  // 12: tcgstore.catalog.CatalogService.GetProducts:input_type -> tcgstore.catalog.GetProductsRequest
-	10, // 13: tcgstore.catalog.CatalogService.SearchProducts:input_type -> tcgstore.catalog.SearchProductsRequest
-	12, // 14: tcgstore.catalog.CatalogService.SetProductPrice:input_type -> tcgstore.catalog.SetProductPriceRequest
-	3,  // 15: tcgstore.catalog.CatalogService.GetProduct:output_type -> tcgstore.catalog.Product
-	9,  // 16: tcgstore.catalog.CatalogService.GetProducts:output_type -> tcgstore.catalog.GetProductsResponse
-	11, // 17: tcgstore.catalog.CatalogService.SearchProducts:output_type -> tcgstore.catalog.SearchProductsResponse
-	3,  // 18: tcgstore.catalog.CatalogService.SetProductPrice:output_type -> tcgstore.catalog.Product
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	0,  // 11: tcgstore.catalog.CreateProductRequest.type:type_name -> tcgstore.catalog.ProductType
+	4,  // 12: tcgstore.catalog.CreateProductRequest.card:type_name -> tcgstore.catalog.CardDetails
+	6,  // 13: tcgstore.catalog.CreateProductRequest.sealed:type_name -> tcgstore.catalog.SealedDetails
+	7,  // 14: tcgstore.catalog.CatalogService.GetProduct:input_type -> tcgstore.catalog.GetProductRequest
+	8,  // 15: tcgstore.catalog.CatalogService.GetProducts:input_type -> tcgstore.catalog.GetProductsRequest
+	10, // 16: tcgstore.catalog.CatalogService.SearchProducts:input_type -> tcgstore.catalog.SearchProductsRequest
+	12, // 17: tcgstore.catalog.CatalogService.SetProductPrice:input_type -> tcgstore.catalog.SetProductPriceRequest
+	13, // 18: tcgstore.catalog.CatalogService.CreateProduct:input_type -> tcgstore.catalog.CreateProductRequest
+	14, // 19: tcgstore.catalog.CatalogService.UpdateProduct:input_type -> tcgstore.catalog.UpdateProductRequest
+	3,  // 20: tcgstore.catalog.CatalogService.GetProduct:output_type -> tcgstore.catalog.Product
+	9,  // 21: tcgstore.catalog.CatalogService.GetProducts:output_type -> tcgstore.catalog.GetProductsResponse
+	11, // 22: tcgstore.catalog.CatalogService.SearchProducts:output_type -> tcgstore.catalog.SearchProductsResponse
+	3,  // 23: tcgstore.catalog.CatalogService.SetProductPrice:output_type -> tcgstore.catalog.Product
+	3,  // 24: tcgstore.catalog.CatalogService.CreateProduct:output_type -> tcgstore.catalog.Product
+	3,  // 25: tcgstore.catalog.CatalogService.UpdateProduct:output_type -> tcgstore.catalog.Product
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_catalog_proto_init() }
@@ -1110,13 +1369,18 @@ func file_catalog_proto_init() {
 	file_catalog_proto_msgTypes[1].OneofWrappers = []any{}
 	file_catalog_proto_msgTypes[7].OneofWrappers = []any{}
 	file_catalog_proto_msgTypes[9].OneofWrappers = []any{}
+	file_catalog_proto_msgTypes[10].OneofWrappers = []any{
+		(*CreateProductRequest_Card)(nil),
+		(*CreateProductRequest_Sealed)(nil),
+	}
+	file_catalog_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_proto_rawDesc), len(file_catalog_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
